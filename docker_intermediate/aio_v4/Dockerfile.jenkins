@@ -1,0 +1,75 @@
+#DOCKER INTERMEDIATE
+FROM worsica/jenkins-worsica-essentials:development
+MAINTAINER Ricardo Martins <rjmartins@lnec.pt>
+
+ENV SEN2COR_VERSION 2.10.0
+ENV SEN2COR_EXT_VERSION 02.10.01
+ENV GOOGLE_CLOUD_VERSION 1.37.1
+ENV CELERY_VERSION 4.1.1
+ENV PSYCOPG2_VERSION 2.8.4
+ENV DJANGO_RASTER_VERSION 0.8
+ENV NETCDF4_VERSION 1.5.8
+#ENV WATTSON_VERSION 1.2.8
+
+#Install GDAL for geodjango on portal and binaries for processing
+#GDAL from fedora repository and directly from pip with no compilation
+#Stick to only install a version of GDAL, to avoid problems with updates
+#Numpy from pip requirements must be installed first before gdal (import error no module named _gdal_array)
+RUN cd $HOME \
+    && yum install -y gdal-${GDAL_VERSION} gdal-devel-${GDAL_VERSION} gcc-c++ gzip which postgresql-devel \
+    && echo -e " \
+        celery==${CELERY_VERSION}  \n\
+        Django==${DJANGO_VERSION} \n\
+        psycopg2-binary==${PSYCOPG2_VERSION} \n\
+        psycopg2==${PSYCOPG2_VERSION} \n\
+	django-raster==${DJANGO_RASTER_VERSION} \n\
+        opencv-python==${OPENCV_VERSION} \n\
+        GDAL==${GDAL_VERSION} \n\
+	django-request==${DJANGO_REQUEST_VERSION} \n\
+	protobuf==3.19.4 \n\
+	google-cloud-storage==${GOOGLE_CLOUD_VERSION} \n\
+	scikit-image==${SCIKIT_IMAGE_VERSION} \n\
+	dea-tools==0.2.5 \n\
+	rasterstats==0.16.0 \n\
+	geopy==2.2.0" >> requirements-interm-pip.txt \
+    && $HOME/worsica_web-py363_venv/bin/pip3 install --no-cache-dir -r requirements-interm-pip.txt \
+    && mkdir worsica_web_intermediate \
+    && mkdir worsica_web_products
+    
+#install sen2cor for conversion/atmospheric correction
+#....
+
+#Install dependencies to run functional tests (browsers)
+RUN cd $HOME \
+    && yum install -y firefox \
+    && cd /var/tmp \
+    && curl -O https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm \
+    && yum install -y google-chrome-stable_current_x86_64.rpm \
+    && rm -rf google-chrome-stable_current_x86_64.rpm
+
+#Requesitos do script worsica_Flood2Topo.py
+#usar 7z porque unzip nao consegue extrair o zip por considerar possível zip bomb   
+RUN cd $HOME \
+    && yum install -y git cmake netcdf-devel p7zip p7zip-plugins \
+    && git clone --recurse-submodules https://github.com/CNES/aviso-fes.git \
+    && cd aviso-fes \
+    && mkdir build \
+    && cd build \    
+    && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/bin/FES2014 -DBUILD_PYTHON=yes -DPYTHON_LIBRARY=/usr/local/pythonz/pythons/CPython-3.6.3/lib -DPython3_EXECUTABLE=$HOME/worsica_web-py363_venv/bin/python3 -DPython3_LIBRARIES=/usr/local/pythonz/pythons/CPython-3.6.3/lib -DPython3_INCLUDE_DIRS=/usr/local/pythonz/pythons/CPython-3.6.3/include/python3.6m -DCMAKE_C_FLAGS="-fPIC" \
+    && make -j \
+    && make install \    
+    && cd $HOME/bin/FES2014 \
+    && mkdir data \
+    && $HOME/worsica_web-py363_venv/bin/pip3 install uptide \
+    
+#Cleanup time
+    && yum clean all --enablerepo='*' \
+    && rm -rf /var/tmp/* \
+    && rm -rf /var/cache/* \
+    && rm -rf ~/.cache/*
+
+#set the path enviroment variable and the cwd
+ENV PATH /usr/local/worsica_web-py363_venv/bin:${PATH}
+WORKDIR /usr/local/worsica_web_intermediate
+
+

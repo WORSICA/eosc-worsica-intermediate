@@ -1,0 +1,4 @@
+# FILE: .bandit
+[bandit]
+exclude = ./FAIR_eva/
+skips = B603,B602,B108,B105,B404

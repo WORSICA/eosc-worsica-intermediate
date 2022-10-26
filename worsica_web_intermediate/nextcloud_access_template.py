@@ -1,0 +1,5 @@
+NEXTCLOUD_USER = '...'
+NEXTCLOUD_PWD = '...'
+
+NEXTCLOUD_DOMAIN = 'localhost'
+NEXTCLOUD_URL_PATH = 'http://'+NEXTCLOUD_DOMAIN+'/remote.php/dav/files/'+NEXTCLOUD_USER
