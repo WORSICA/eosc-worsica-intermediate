@@ -3193,6 +3193,7 @@ def show_job_submission_raster(request, job_submission_id, process_imageset_id, 
         if raster_type == 'RGB':
             jsonResponse["response"] = {
                 'url': '/raster/algebra',
+                'type': job_submission.provider,
                 'min': rtbmeta_min,
                 'max': rtbmeta_max
             }
@@ -3202,6 +3203,7 @@ def show_job_submission_raster(request, job_submission_id, process_imageset_id, 
             rgb_rtbmeta_max = [255, 255, 255]
             jsonResponse["response"] = {
                 'url': '/raster/tiles/' + str(raster_id),
+                'type': job_submission.provider,
                 'rgbcolorfrom': rgb_rtbmeta_min, 'min': rtbmeta_min,
                 'rgbcolorto': rgb_rtbmeta_max, 'max': rtbmeta_max,
                 'rgbcolorover': rgb_rtbmeta_middle
