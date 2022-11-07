@@ -12,15 +12,17 @@ def _build_command_shell_to_run(SCRIPT_FILE, LOG_FILEPATH=None, ENABLE_GRID=Fals
         if ENABLE_GRID:
             print('---> Run on the grid')
             SUBMISSION_NAME = LOG_FILEPATH.split('/')[-1].replace('.out', '')  # submission name is log filename without extension
-            cs = 'unbuffer ./worsica_grid_launch_submission.sh ' + SUBMISSION_NAME + ' \"' + SCRIPT_FILE + '\" ' + LOG_FILEPATH + ' | tee ' + LOG_FILEPATH + '.debug'  # generate debug log too
+            #cs = 'unbuffer ./worsica_grid_launch_submission.sh ' + SUBMISSION_NAME + ' \"' + SCRIPT_FILE + '\" ' + LOG_FILEPATH + ' | tee ' + LOG_FILEPATH + '.debug'  # generate debug log too
+            cs = ['/bin/sh','-c','unbuffer ./worsica_grid_launch_submission.sh ' + SUBMISSION_NAME + ' \'[' + SCRIPT_FILE + ']\' ' + LOG_FILEPATH + ' | tee ' + LOG_FILEPATH + '.debug']
         else:
             print('---> Run locally')
             cs = 'unbuffer ' + SCRIPT_FILE + ' | tee ' + LOG_FILEPATH
+            cs = shlex.split("/bin/sh -c '" + cs + "'")
     else:
         print('without logs')
         print('---> Run locally')
         cs = 'unbuffer ' + SCRIPT_FILE
-    cs = shlex.split("/bin/sh -c '" + cs + "'")
+        cs = shlex.split("/bin/sh -c '" + cs + "'")
     return cs
 
 

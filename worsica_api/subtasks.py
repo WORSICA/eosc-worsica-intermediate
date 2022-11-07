@@ -24,6 +24,8 @@ from django.utils.text import slugify
 
 from worsica_web_intermediate import settings, nextcloud_access
 from . import logger, views, subsubtasks, utils
+from osgeo import gdal
+import numpy as np
 
 worsica_logger = logger.init_logger('WORSICA-Intermediate.Views', settings.LOG_PATH)
 ACTUAL_PATH = os.getcwd()
@@ -637,7 +639,22 @@ def _store_raster(_obj_mpis_gt, SERVICE, USER_ID, ROI_ID, SIMULATION_USERCHOSEN_
             rl = raster_models.RasterLayer.objects.create(name=nameRl)
         rl.rasterfile.save('new', File(wrapped_file))
         rl.save()
+        print(rl.id)
         wrapped_file.close()
+        wrapped_file = None
+        #Override existing histogram
+        print('Fix existing Histogram...')
+        wrapped_file = gdal.Open(imagePath)
+        for i in range(1, wrapped_file.RasterCount+1):
+            print(i)
+            data = wrapped_file.GetRasterBand(i).ReadAsArray()
+            hv,hb = np.histogram(data, bins=100)
+            print(hv, hb)
+            print(sum(hv))
+            md = raster_models.RasterLayerBandMetadata.objects.get(rasterlayer_id=rl.id, band=i-1)
+            md.hist_values = hv.tolist()
+            md.hist_bins = hb.tolist()
+            md.save()
         wrapped_file = None
         print(SERVICE)
         print(CLONE_AND_CLEAN_FROM)
