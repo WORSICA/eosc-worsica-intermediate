@@ -26,6 +26,7 @@ from worsica_web_intermediate import settings, nextcloud_access
 from . import logger, views, subsubtasks, utils
 from osgeo import gdal
 import numpy as np
+import math
 
 worsica_logger = logger.init_logger('WORSICA-Intermediate.Views', settings.LOG_PATH)
 ACTUAL_PATH = os.getcwd()
@@ -648,7 +649,9 @@ def _store_raster(_obj_mpis_gt, SERVICE, USER_ID, ROI_ID, SIMULATION_USERCHOSEN_
         for i in range(1, wrapped_file.RasterCount+1):
             print(i)
             data = wrapped_file.GetRasterBand(i).ReadAsArray()
-            hv,hb = np.histogram(data, bins=100)
+            datamax = np.nanmax(data) #find max, excluding nans
+            datamin = np.nanmin(data) #find min, excluding nans
+            hv,hb = np.histogram(data, range=(math.floor(datamin), math.ceil(datamax)), bins=100)
             print(hv, hb)
             print(sum(hv))
             md = raster_models.RasterLayerBandMetadata.objects.get(rasterlayer_id=rl.id, band=i-1)
